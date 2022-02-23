@@ -1,0 +1,78 @@
+<!DOCTYPE htnml>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+    
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+          integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+          crossorigin="" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+            integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+            crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <style>
+        #map {
+            height: 60%;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bulding Permits of Calgary</h1>
+    <h2>Refresh from browser to search for new building permits</h2>
+    <div class="searchbox">
+        <form onsubmit="searchfor(); return false;">
+            <label>Date From</label>
+            <input placeholder="From" type="text" onfocus="(this.type='date')" onblur="(this.type='text')" id="datefrom">
+            <label>to</label>
+            <input placeholder="To" type="text" onfocus="(this.type='date')" onblur="(this.type='text')" id="dateto">
+            <input class="button" type="submit" value="Search">
+        </form>
+    </div>
+    <div id="map"></div>
+    <script>
+        //referenced from https://github.com/samrknight12/project2
+            async function searchfor() {
+            let df = document.querySelector('#datefrom').value;
+            let dt = document.querySelector('#dateto').value;
+            let getdata = 'https://data.calgary.ca/resource/c2es-76ed.geojson?' + '$where=issueddate > ' + '\'' + df + '\'' + ' and issueddate < ' + '\'' + dt + '\'';
+            const storedata = await fetch(getdata);
+            let getjson = await storedata.json();
+            var markers = L.markerClusterGroup();
+            const tags = L.geoJSON(getjson, {
+                onEachFeature: function (feature, layer) {
+                    var displayed_info = 'Issue Date: ' + feature.properties.issueddate + '<br></br>' + 'Work Class Group: ' + feature.properties.workclassgroup + '<br></br>' + 'Contractor Name: ' + feature.properties.contractorname + '<br></br>' + 'Community Name: ' + feature.properties.communityname + '<br></br>' + 'Original Address: ' + feature.properties.originaladdress;
+                    layer.bindPopup(displayed_info)
+                },
+            });
+            markers.addLayer(tags);
+            map.addLayer(markers);
+        }
+
+        var incidents=L.tileLayer(
+            'https://api.mapbox.com/styles/v1/matin-ashoori/ckzz4b3e300jg15r4tbg9ympk/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1IjoibWF0aW4tYXNob29yaSIsImEiOiJja3p6NW54OWEwNnl6M2pxaGMydWI4ZWxnIn0.L7splnUBQudq-cBRFoOblw', {
+            center: [51.0447,-114.0719],
+            zoom: 11
+            });
+        var noincidents=L.tileLayer(
+            'https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=ag8MnNzr0wjHZsMX5QSZ', {
+            attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
+        });
+        var map = L.map('map',{
+            center:[51.0447,-114.0719],
+            zoom: 11,
+            layers:[incidents, noincidents]
+        });
+        var baseMaps={
+            "No incidents shown": noincidents,
+            "Incidents shown":incidents
+        };
+        L.control.layers(baseMaps).addTo(map);
+
+    </script>
+</body>
+</html>
